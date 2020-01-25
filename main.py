@@ -130,36 +130,38 @@ def join_datasets(data_100_min_pitches, ind_pitch_datasets, movement_datasets):
 
     return df
 
-df_1 = df
-# remove the knuckleballers and forkball pitcher
-df_1 = df_1.drop(df_1.index[645])
-df_1 = df_1.drop(df_1.index[684])
-df_1 = df_1.drop(df_1.index[701])
-# remove eephus, knuckleball, and forkball
-df_1 = df_1[df_1.columns.drop(list(df_1.filter(regex='knuckleball')))]
-df_1 = df_1[df_1.columns.drop(list(df_1.filter(regex='forkball')))]
-df_1 = df_1[df_1.columns.drop(list(df_1.filter(regex='eephus')))]
+# after exploring the data, I discovered there aren't enough pitchers that throw knuckleballs, eephus or forkballs
+# therefore, those pitchers are removed
+def remove_too_few_pitches(df):
+    # remove the knuckleballers and forkball pitcher
+    df = df.drop(df.index[645])
+    df = df.drop(df.index[684])
+    df = df.drop(df.index[701])
+    # remove eephus, knuckleball, and forkball
+    df = df[df.columns.drop(list(df.filter(regex='knuckleball')))]
+    df = df[df.columns.drop(list(df.filter(regex='forkball')))]
+    df = df[df.columns.drop(list(df.filter(regex='eephus')))]
 
-# reduce pitch types and drop extra percentage column
-df_1 = df_1.drop(columns=['4_seam_fb_pitch_percentage',
-                                      'sinker_pitch_percentage',
-                                      'changeup_pitch_percentage',
-                                      'slider_pitch_percentage',
-                                      'curveball_pitch_percentage',
-                                      'cut_fb_pitch_percentage',
-                                      'split_finger_pitch_percentage'])
+    # reduce pitch types and drop extra percentage column
+    df = df.drop(columns=['4_seam_fb_pitch_percentage',
+                          'sinker_pitch_percentage',
+                          'changeup_pitch_percentage',
+                          'slider_pitch_percentage',
+                          'curveball_pitch_percentage',
+                          'cut_fb_pitch_percentage',
+                          'split_finger_pitch_percentage'])
 
-df_1['sinker_pitch_percent'].fillna(df_1['2_seam_fb_pitch_percent'], inplace=True)
-df_1['sinker_spin_rate'].fillna(df_1['2_seam_fb_spin_rate'], inplace=True)
-df_1['sinker_velocity'].fillna(df_1['2_seam_fb_velocity'], inplace=True)
-df_1['sinker_effective_speed'].fillna(df_1['2_seam_fb_effective_speed'], inplace=True)
-df_1['sinker_release_extension'].fillna(df_1['2_seam_fb_release_extension'], inplace=True)
-df_1['curveball_pitch_percent'].fillna(df_1['knuckle_curve_pitch_percent'], inplace=True)
-df_1['curveball_spin_rate'].fillna(df_1['knuckle_curve_spin_rate'], inplace=True)
-df_1['curveball_velocity'].fillna(df_1['knuckle_curve_velocity'], inplace=True)
-df_1['curveball_effective_speed'].fillna(df_1['knuckle_curve_effective_speed'], inplace=True)
-df_1['curveball_release_extension'].fillna(df_1['knuckle_curve_release_extension'], inplace=True)
-df_1 = df_1.drop(columns=['2_seam_fb_pitch_percent', '2_seam_fb_spin_rate', '2_seam_fb_velocity', '2_seam_fb_effective_speed', '2_seam_fb_release_extension',
+    df['sinker_pitch_percent'].fillna(df['2_seam_fb_pitch_percent'], inplace=True)
+    df['sinker_spin_rate'].fillna(df['2_seam_fb_spin_rate'], inplace=True)
+    df['sinker_velocity'].fillna(df['2_seam_fb_velocity'], inplace=True)
+    df['sinker_effective_speed'].fillna(df['2_seam_fb_effective_speed'], inplace=True)
+    df['sinker_release_extension'].fillna(df['2_seam_fb_release_extension'], inplace=True)
+    df['curveball_pitch_percent'].fillna(df['knuckle_curve_pitch_percent'], inplace=True)
+    df['curveball_spin_rate'].fillna(df['knuckle_curve_spin_rate'], inplace=True)
+    df['curveball_velocity'].fillna(df['knuckle_curve_velocity'], inplace=True)
+    df['curveball_effective_speed'].fillna(df['knuckle_curve_effective_speed'], inplace=True)
+    df['curveball_release_extension'].fillna(df['knuckle_curve_release_extension'], inplace=True)
+    df = df.drop(columns=['2_seam_fb_pitch_percent', '2_seam_fb_spin_rate', '2_seam_fb_velocity', '2_seam_fb_effective_speed', '2_seam_fb_release_extension',
                                       'knuckle_curve_pitch_percent', 'knuckle_curve_spin_rate', 'knuckle_curve_velocity', 'knuckle_curve_effective_speed', 'knuckle_curve_release_extension'])
 
 # reorganize columns together by pitch type
