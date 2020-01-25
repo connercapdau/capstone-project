@@ -27,3 +27,7 @@ Two machine learning methods were used for predicting xwOBA. Random Forest
 Regression was used for the first set of features, and Random Forest Regression and
 Linear Regression were used for the second set of features. Linear Regression resulted in
 the highest accuracy with a 91.80% Mean Average Percentage Error.
+
+
+
+If you would like to view the entire paper, send me an email at connercapdau@gmail.com.
