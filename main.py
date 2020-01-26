@@ -7,7 +7,7 @@ def read_pitch_datasets():
     """
     This function reads in the different pitch type datasets.
     """
-    
+
     data_100_min_pitches = pd.read_csv('../Datasets/100_min_pitches.csv')
     data_4_seam_fb = pd.read_csv('../Datasets/4_seam_fb.csv')
     data_2_seam_fb = pd.read_csv('../Datasets/2_seam_fb.csv')
@@ -147,7 +147,7 @@ def remove_too_few_pitches(df):
     After exploring the data, I discovered there aren't enough pitchers that throw knuckleballs, eephus or forkballs.
     This function removes all columns related to those pitch types, then reorganizes the data
     """
-    
+
     # remove the knuckleballers and forkball pitcher
     df = df.drop(df.index[645])
     df = df.drop(df.index[684])
@@ -408,7 +408,7 @@ def rr_model(train_x, test_x, train_y, test_y):
 
     regr = RandomForestRegressor(n_estimators=100, criterion='mae', random_state=1)
     regr.fit(train_x, train_y.values.ravel())
-
+    regr.predict()
     regr_accuracy = evaluate(regr, test_x, test_y)
 
     return regr, regr_accuracy
@@ -466,8 +466,8 @@ def find_overperformers(df, model, n):
     n is the number of largest overperformers to select
     """
 
-    df1 = pred_xwoba(df, model)
-    overperformed = df1[['player_name', 'pred_xwoba', 'xwoba', 'diff_xwoba']].nlargest(n, ['diff_xwoba'])
+    df = pred_xwoba(df, model)
+    overperformed = df[['player_name', 'pred_xwoba', 'xwoba', 'diff_xwoba']].nlargest(n, ['diff_xwoba'])
 
     return overperformed
 
@@ -475,11 +475,340 @@ def find_overperformers(df, model, n):
 def find_underperformers(df, model, n):
     """
     df is the data
-    model is the model used for predicting xwoba 
+    model is the model used for predicting xwoba
     n is the number of largest underperformers to select
     """
 
-    df1 = pred_xwoba(df, model)
-    underperformed = df1[['player_name', 'pred_xwoba', 'xwoba', 'diff_xwoba']].nsmallest(n, ['diff_xwoba'])
+    df = pred_xwoba(df, model)
+    underperformed = df[['player_name', 'pred_xwoba', 'xwoba', 'diff_xwoba']].nsmallest(n, ['diff_xwoba'])
 
     return underperformed
+
+
+if __name__ == '__main__':
+
+    # I first reviewed the data and created visualizations to use in my paper. I had decided to use data within the
+    # first 2 standard deviations. The visualization code I used is in the text block below; I didn't feel like it
+    # needed to be ran in this portfolio.
+    """
+    # get data for 2 and 3 st dev
+    from scipy import stats
+    df_2sd = df[(np.abs(stats.zscore(df.xwoba)) < 2)]
+    # df_3sd = df[(np.abs(stats.zscore(df.xwoba)) < 3)]
+    
+    corr_df_2sd = df_2sd.corr()
+    # corr_df_3sd = df_3sd.corr()
+    
+    import seaborn as sns
+    sns.set(style='ticks', color_codes=True)
+    sns.distplot(df.xwoba)
+    sns.plt.show()
+    
+    sns.distplot(df_3sd.xwoba)
+    sns.plt.show()
+    
+    sns.distplot(df_2sd.xwoba)
+    sns.plt.show()
+    
+    sns.pairplot(df, dropna=True, vars=['xwoba', 'spin_rate', 'effective_speed'], kind='reg')
+    sns.plt.show()
+    
+    # drop pitch specific woba and xwoba columns and woba
+    df_2sd = df_2sd[df_2sd.columns.drop(list(df_2sd.filter(regex='_xwoba')))]
+    df_2sd = df_2sd[df_2sd.columns.drop(list(df_2sd.filter(regex='_woba')))]
+    # df_2sd = df_2sd.drop(columns=['woba'])
+    
+    g = sns.PairGrid(df, y_vars=['xwoba'], x_vars=['spin_rate', 'effective_speed'])
+    g.map(sns.regplot)
+    g = sns.PairGrid(df_1_2sd, y_vars=['xwoba'], x_vars=['4_seam_fb_spin_rate', '4_seam_fb_effective_speed'])
+    g.map(sns.regplot)
+    g = sns.PairGrid(df_1_2sd, y_vars=['xwoba'], x_vars=['sinker_spin_rate', 'sinker_effective_speed'])
+    g.map(sns.regplot)
+    g = sns.PairGrid(df_1_2sd, y_vars=['xwoba'], x_vars=['cut_fb_spin_rate', 'cut_fb_effective_speed'])
+    g.map(sns.regplot)
+    g = sns.PairGrid(df_1_2sd, y_vars=['xwoba'], x_vars=['changeup_spin_rate', 'changeup_effective_speed'])
+    g.map(sns.regplot)
+    g = sns.PairGrid(df_1_2sd, y_vars=['xwoba'], x_vars=['curveball_spin_rate', 'curveball_effective_speed'])
+    g.map(sns.regplot)
+    g = sns.PairGrid(df_1_2sd, y_vars=['xwoba'], x_vars=['slider_spin_rate', 'slider_effective_speed'])
+    g.map(sns.regplot)
+    g = sns.PairGrid(df_1_2sd, y_vars=['xwoba'], x_vars=['split_finger_spin_rate', 'split_finger_effective_speed'])
+    g.map(sns.regplot)
+    
+    
+    fig, ax = plt.subplots()
+    ax2 = ax.twinx()
+    sns.regplot(x='4_seam_fb_spin_rate', y='xwoba', data=df_1_2sd, ax=ax)
+    sns.regplot(x='4_seam_fb_effective_speed', y='xwoba', data=df_1_2sd, ax=ax2)
+    sns.show()
+    
+    
+    sns.regplot(x='sinker_effective_speed', y='xwoba', data=df_1_2sd, ax=axs[0])
+    sns.regplot(x='cut_fb_spin_rate', y='xwoba', data=df_1_2sd, ax=axs[0])
+    sns.regplot(x='cut_fb_effective_speed', y='xwoba', data=df_1_2sd, ax=axs[0])
+    sns.regplot(x='changeup_fb_spin_rate', y='xwoba', data=df_1_2sd, ax=axs[0])
+    sns.regplot(x='changeup_effective_speed', y='xwoba', data=df_1_2sd, ax=axs[0])
+    sns.regplot(x='curveball_spin_rate', y='xwoba', data=df_1_2sd, ax=axs[0])
+    sns.regplot(x='curveball_effective_speed', y='xwoba', data=df_1_2sd, ax=axs[0])
+    """
+
+
+    # read in all data
+    data_1, data_2, data_3 = read_pitch_datasets()
+
+    # combine datasets together
+    df = join_datasets(data_1, data_2, data_3)
+
+    # remove some of the pitches
+    df = remove_too_few_pitches(df)
+
+
+    # Approach 1
+    # Random Forest Regression on data from simple_df()
+
+    df_1 = simple_df(df)
+
+    # split data
+    train_x_1, test_x_1, train_y_1, test_y_1 = split_simple_data(df_1)
+    # create baseline
+    base_accuracy_1, base_error_1 = create_baseline(test_y_1)
+
+    # create random forest regression model
+    regr_1, regr_accuracy_1 = rr_model(train_x_1, test_x_1, train_y_1, test_y_1)
+    # 
+    # 90.18 accuracy; 0.0313 error
+
+
+    # I might be able to improve model by hyperparameter tuning model
+
+    # see current forest parameters
+    regr_1.get_params()
+
+    # use random hyperparameter grid
+    from sklearn.model_selection import RandomizedSearchCV
+    from pprint import pprint
+    # num of trees
+    n_estimators = [int(x) for x in np.linspace(start=100, stop=2000, num=20)]
+    # num of features to consider at every split
+    max_features = ['auto', 'sqrt']
+    # max num of levels in tree
+    max_depth = [int(x) for x in np.linspace(10, 110, num= 11)]
+    max_depth.append(None)
+    # min num of samples required to split a node
+    min_samples_split = [2, 5, 10]
+    # min num of samples required at each leaf node
+    min_samples_leaf = [1, 2, 4]
+
+    # create random grid
+    random_grid_1 = {'n_estimators': n_estimators,
+                   'max_features': max_features,
+                   'max_depth': max_depth,
+                   'min_samples_split': min_samples_split,
+                   'min_samples_leaf': min_samples_leaf}
+    pprint(random_grid_1)
+
+    # Use the random grid to search for best hyperparameters
+    # Random search of parameters, using 3 fold cross validation,
+    # search across 100 different combinations, and use all available cores
+    regr_random_1 = RandomizedSearchCV(estimator = regr, param_distributions = random_grid, n_iter = 100, cv = 3, verbose=2, random_state=1, n_jobs=-1)
+    regr_random_1.fit(train_x_1, train_y_1.values.ravel())
+
+    # view best parameters
+    regr_random_1.best_params_
+
+    random_best_accuracy_1 = evaluate(regr_random_1, test_x_1, test_y_1)
+
+
+    # use GridSearchCV to explicitly specify combinations to try based on results from regr_random.best_params_
+    from sklearn.model_selection import GridSearchCV
+
+    # create parameter grid based on results of random search
+    param_grid_1 = {'max_depth': [60, 70, 80, 90, 100],
+                  'max_features': ['auto'],
+                  'min_samples_leaf': [2, 3, 4, 5, 6],
+                  'min_samples_split': [3, 4, 5, 6, 7],
+                  'n_estimators': [200, 300, 400]}
+    # create a based model
+    rf_1 = RandomForestRegressor()
+    grid_search_1 = GridSearchCV(estimator=rf_1, param_grid=param_grid_1, cv=5, n_jobs=-1, verbose=2)
+
+    # Fit the grid search to the data
+    grid_search_1.fit(train_x_1, train_y_1.values.ravel())
+    grid_search_1.best_params_
+
+    best_grid_1 = grid_search_1.best_estimator_
+    grid_accuracy_1 = evaluate(best_grid_1, test_x_1, test_y_1)
+
+
+
+
+    # Approach 2
+    # Random Forest Regression on data using complex_df()
+
+    df_2 = simple_df(df)
+
+    # split data
+    train_x_2, test_x_2, train_y_2, test_y_2 = split_simple_data(df_2)
+    # create baseline
+    base_accuracy_2, base_error_2 = create_baseline(test_y_2)
+
+    # create random forest regression model
+    regr_2, regr_accuracy_2 = rr_model(train_x_2, test_x_2, train_y_2, test_y_2)
+    # 91.48 accuracy; 0.0263 error
+    
+    # I might be able to improve model by hyperparameter tuning model
+    # use random hyperparameter grid
+    
+    # num of trees
+    n_estimators = [int(x) for x in np.linspace(start=100, stop=2000, num=10)]
+    # num of features to consider at every split
+    max_features = ['auto', 'sqrt']
+    # max num of levels in tree
+    max_depth = [int(x) for x in np.linspace(10, 110, num= 11)]
+    max_depth.append(None)
+    # min num of samples required to split a node
+    min_samples_split = [2, 5, 10]
+    # min num of samples required at each leaf node
+    min_samples_leaf = [1, 2, 4]
+    
+    # create random grid
+    random_grid = {'n_estimators': n_estimators,
+                   'max_features': max_features,
+                   'max_depth': max_depth,
+                   'min_samples_split': min_samples_split,
+                   'min_samples_leaf': min_samples_leaf}
+    pprint(random_grid)
+    
+    # Use the random grid to search for best hyperparameters
+    # Random search of parameters, using 3 fold cross validation,
+    # search across 100 different combinations, and use all available cores
+    regr_random_2 = RandomizedSearchCV(estimator=regr_2, param_distributions=random_grid, n_iter=100, cv=3, verbose=2, random_state=1, n_jobs=-1)
+    regr_random_2.fit(train_x_2, train_y_2.values.ravel())
+    
+    # view best parameters
+    regr_random_2.best_params_
+
+    random_best_accuracy_2 = evaluate(regr_random_2, test_x_2, test_y_2)
+    
+    # use GridSearchCV to explicitly specify combinations to try based on results from regr_random.best_params_
+    
+    # create parameter grid based on results of random search
+    param_grid = {'max_depth': [60, 70, 80, 90],
+                  'max_features': ['auto'],
+                  'min_samples_leaf': [3, 4, 5],
+                  'min_samples_split': [2, 3, 4],
+                  'n_estimators': [850, 950, 1050]}
+
+    grid_search_complex_2 = GridSearchCV(estimator=regr_2, param_grid=param_grid, cv=5, n_jobs=-1, verbose=2)
+    
+    # Fit the grid search to the data
+    grid_search_complex_2.fit(train_x_2, train_y_2.values.ravel())
+    grid_search_complex_2.best_params_
+    
+    best_grid_complex_2 = grid_search_complex_2.best_estimator_
+    grid_accuracy_2 = evaluate(best_grid_complex_2, test_x_2, test_y_2)
+    # 91.66% accuracy, 0.0258 points error
+
+
+
+    
+    # Approach 3
+    # involved combining features per pitch type to create a "pitch score" as the input features for Linear Regression.
+    # this involved using data from complex_df function
+
+    df_3 = complex_df(df)
+    
+    # standardize variables
+    df_3 = standardized_complex_df(df_3)
+    
+    # check correlations of df from standardized_complex_df()
+    corr_model = df_3.corr()
+    
+    # need to create a single feature per pitch type
+    # each pitch type will be some variation of:
+    # pitch_score = pitch_percent * (spin_rate * x1 + effective_speed * x2 + break_z * x3 + break_x * x4)
+    # x values are based on correlation of variable with xwoba per pitch type (summation of abs(x) values equals 1)
+    corr_xwoba = np.array([[-0.26420, -0.24806, 0.22962, -0.02282],
+                  [-0.23614, -0.26535, 0.01287, -0.13379],
+                  [-0.10610, -0.17348, 0.10354, -0.19249],
+                  [-0.15349, -0.13444, 0.06987, -0.09544],
+                  [-0.18391, -0.14302, 0.03514, -0.10084],
+                  [-0.20793, -0.04600, -0.00349, -0.18731],
+                  [-0.15859, 0.21755, -0.11235, 0.30157]])
+    
+    # get percent of xwoba corr per pitch type
+    x1 = [corr_xwoba[0][0] / sum(np.abs(corr_xwoba[0])), corr_xwoba[0][1] / sum(np.abs(corr_xwoba[0])), corr_xwoba[0][2] / sum(np.abs(corr_xwoba[0])), corr_xwoba[0][3] / sum(np.abs(corr_xwoba[0]))]
+    x2 = [corr_xwoba[1][0] / sum(np.abs(corr_xwoba[1])), corr_xwoba[1][1] / sum(np.abs(corr_xwoba[1])), corr_xwoba[1][2] / sum(np.abs(corr_xwoba[1])), corr_xwoba[1][3] / sum(np.abs(corr_xwoba[1]))]
+    x3 = [corr_xwoba[2][0] / sum(np.abs(corr_xwoba[2])), corr_xwoba[2][1] / sum(np.abs(corr_xwoba[2])), corr_xwoba[2][2] / sum(np.abs(corr_xwoba[2])), corr_xwoba[2][3] / sum(np.abs(corr_xwoba[2]))]
+    x4 = [corr_xwoba[3][0] / sum(np.abs(corr_xwoba[3])), corr_xwoba[3][1] / sum(np.abs(corr_xwoba[3])), corr_xwoba[3][2] / sum(np.abs(corr_xwoba[3])), corr_xwoba[3][3] / sum(np.abs(corr_xwoba[3]))]
+    x5 = [corr_xwoba[4][0] / sum(np.abs(corr_xwoba[4])), corr_xwoba[4][1] / sum(np.abs(corr_xwoba[4])), corr_xwoba[4][2] / sum(np.abs(corr_xwoba[4])), corr_xwoba[4][3] / sum(np.abs(corr_xwoba[4]))]
+    x6 = [corr_xwoba[5][0] / sum(np.abs(corr_xwoba[5])), corr_xwoba[5][1] / sum(np.abs(corr_xwoba[5])), corr_xwoba[5][2] / sum(np.abs(corr_xwoba[5])), corr_xwoba[5][3] / sum(np.abs(corr_xwoba[5]))]
+    x7 = [corr_xwoba[6][0] / sum(np.abs(corr_xwoba[6])), corr_xwoba[6][1] / sum(np.abs(corr_xwoba[6])), corr_xwoba[6][2] / sum(np.abs(corr_xwoba[6])), corr_xwoba[6][3] / sum(np.abs(corr_xwoba[6]))]
+    x = [x1, x2, x3, x4, x5, x6, x7]
+    
+    for i in range(len(complex_pitch_types)):
+        df_3['%s_pitch_score' % complex_pitch_types[i]] = (df_model['%s_spin_rate' % complex_pitch_types[i]] * x[i][0] +
+                                                               df_model['%s_effective_speed' % complex_pitch_types[i]] * x[i][1] +
+                                                               df_model['%s_pitcher_break_z' % complex_pitch_types[i]] * x[i][2] +
+                                                               df_model['%s_pitcher_break_x' % complex_pitch_types[i]] * x[i][3])
+    
+    # add pitch scores for total score
+    # first replace nan with 0
+    df_3 = df_3.fillna(0)
+    
+    # a negative score is currently better so multiply by -1 for ease of understanding
+    for i in range(len(complex_pitch_types)):
+        df_3['%s_pitch_score' % complex_pitch_types[i]] = (df_model['%s_pitch_score' % complex_pitch_types[i]] * (-1))
+    
+    
+    # calculate total pitch score by multiplying each pitch score by it's thrown percentage
+    df_3['total_pitch_score_w_pitch_percent'] = (df_3['4_seam_fb_pitch_score'] * df_3['4_seam_fb_pitch_percent'] +
+                                     df_3['sinker_pitch_score'] * df_3['sinker_pitch_percent'] +
+                                     df_3['cut_fb_pitch_score'] * df_3['cut_fb_pitch_percent'] +
+                                     df_3['changeup_pitch_score'] * df_3['changeup_pitch_percent'] +
+                                     df_3['curveball_pitch_score'] * df_3['curveball_pitch_percent'] +
+                                     df_3['slider_pitch_score'] * df_3['slider_pitch_percent'] +
+                                     df_3['split_finger_pitch_score'] * df_3['split_finger_pitch_percent'])
+    
+    df_3['total_pitch_score'] = (df_3['4_seam_fb_pitch_score'] + df_3['sinker_pitch_score'] +
+                                 df_3['cut_fb_pitch_score'] + df_3['changeup_pitch_score'] +
+                                 df_3['curveball_pitch_score'] + df_3['slider_pitch_score'] +
+                                 df_3['split_finger_pitch_score'])
+    
+    # recheck correlation
+    corr_model = df_3.corr()
+    
+    # visualization added to paper
+    """
+    sns.pairplot(df_3, vars=['xwoba', 'total_pitch_score', 'total_pitch_score_w_pitch_percent'])
+    sns.show()
+    """
+     
+    # time to train a model
+    train_model_features_3, test_model_features_3 = train_test_split(df_3, test_size=0.33, random_state=1)
+    train_x_3 = train_model_features_3[['pitch_hand', 'total_pitch_score_w_pitch_percent']]
+    test_x_3 = test_model_features_3[['pitch_hand', 'total_pitch_score_w_pitch_percent']]
+    train_y_3 = train_model_features_3[['xwoba']]
+    test_y_3 = test_model_features_3[['xwoba']]
+    
+    
+    # linear regression model
+    from sklearn.linear_model import LinearRegression
+    lin_reg_model_3 = LinearRegression()
+    lin_reg_model_3.fit(train_x_3, train_y_3)
+    #y_pred = lin_reg_model.predict(test_x)
+    # check results
+    lin_reg_accuracy_3 = evaluate(lin_reg_model_3, test_x_3, test_y_3)
+    # 91.80 accuracy
+    # currently best model
+
+        
+    # calculate pred_xwoba for all players
+    # find 10 largest overperformers and underperformers based on the linear regression model
+    find_overperformers(df_3, lin_reg_model_3, 10)
+    find_underperformers(df_3, lin_reg_model_3, 10)
+    
+    # view min, max, and mean predicted xwoba
+    df_3.pred_xwoba.min()
+    df_3.pred_xwoba.max()
+    df_3.pred_xwoba.mean()
