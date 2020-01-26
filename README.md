@@ -1,5 +1,5 @@
 # capstone-project
-Includes the code and thought process used in my capstone project.
+Includes the code used in my capstone project. The paper goes into details for reasoning behind my decisions.
 
 GOAL
 
